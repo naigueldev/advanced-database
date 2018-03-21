@@ -1,6 +1,6 @@
 # SQL and PL/SQL Exercises
 
-Exercises elaborated in the system analysis and development course at UPF - Passo Fundo - RS
+Exercises elaborated in the System Analysis and Development course at UPF - Passo Fundo - RS
 
 ## About PL/SQL
 

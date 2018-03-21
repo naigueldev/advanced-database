@@ -546,10 +546,8 @@ CREATE OR REPLACE PROCEDURE fazOperacao (op in VARCHAR, v in NUMBER, fone in var
 
    
  
-   -- PROCEDIMENTO PARA PREENCHER DADOS NA TABELA contacliente
-   
-   
-CREATE OR REPLACE FUNCTION f_verificarenda(c int)
+    -- PROCEDIMENTO PARA PREENCHER DADOS NA TABELA contacliente
+   CREATE OR REPLACE FUNCTION f_verificarenda(c int)
    RETURN NUMBER IS
     varR NUMBER; limite NUMBER;
    BEGIN
@@ -576,9 +574,70 @@ CREATE OR REPLACE FUNCTION f_verificarenda(c int)
     IF (r1 = 0) THEN
       INSERT INTO contacliente(codigocliente, numeroconta,datacriacao,limite)
       VALUES(cli,(SELECT numero FROM conta WHERE ROWNUM <= 1),current_date, f_verificarenda(cli));
+    ELSE
+      INSERT INTO contacliente(codigocliente, numeroconta,datacriacao,limite)
+      VALUES(cli,(SELECT c.numero FROM conta c LEFT JOIN contacliente cc on
+      c.numero = cc.numeroconta
+      WHERE cc.numeroconta is null AND ROWNUM <= 1),current_date, f_verificarenda(cli));
     END IF;
    END p_ctacli;
    
    EXEC p_ctacli(21);
    
+   EXEC p_ctacli(22);
+   select * from cliente;
    select * from contacliente;
+   
+  
+  
+   -- Baseado nesta base de dados, faça a descrição de um problema (regra de negócio)
+-- e elabore um PROCEDURE (que usa uma função) para resolver o problema.
+
+-- REGRA DE NEGÓCIO: 
+-- Atualizar o limite da conta de um cliente de acordo com a sua renda.
+
+
+   CREATE OR REPLACE FUNCTION f_atualiza_limite(nivel VARCHAR2)
+   RETURN VARCHAR2 IS
+    var NUMBER;
+   BEGIN
+    select renda into varR from cliente where codigo = c;
+    IF( (varR > 500) and (varR <= 3000) ) THEN
+      limite := 900;
+    ELSIF( (varR > 3000) and (varR <= 8000) ) THEN
+      limite := 1600;
+    ELSIF( (varR > 8000) ) THEN
+      limite := 2400;
+    ELSE
+      limite := 300;
+    END IF;
+  RETURN (limite);
+  END f_verificarenda;
+   
+   select * from cliente;
+   select f_verificarenda(21) from dual;
+   
+   CREATE OR REPLACE PROCEDURE p_atualiza_limite (cli in int , nova_renda in NUMBER) IS
+    ren INT := 0;
+    erro EXCEPTION;
+   BEGIN 
+    select renda INTO ren from cliente where codigo = cli;
+    IF (cli is null) THEN
+      RAISE erro;
+    ELSIF (ren != nova_renda)  THEN
+      IF (nova_renda > ren) THEN
+        INSERT INTO contacliente(codigocliente, numeroconta,datacriacao,limite)
+        VALUES(cli,(SELECT numeroconta FROM contacliente WHERE codigocliente = 21),current_date, f_verificarenda(cli));
+      END IF;
+      
+    ELSE
+      INSERT INTO contacliente(codigocliente, numeroconta,datacriacao,limite)
+      VALUES(cli,(SELECT c.numero FROM conta c LEFT JOIN contacliente cc on
+      c.numero = cc.numeroconta
+      WHERE cc.numeroconta is null AND ROWNUM <= 1),current_date, f_verificarenda(cli));
+    END IF;
+   END p_ctacli;
+   
+   EXEC p_ctacli(21);
+   
+   
